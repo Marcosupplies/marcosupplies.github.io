@@ -2621,6 +2621,57 @@ const _rt2=renderTeam;renderTeam=function(){_rt2();linkify($('#tv'))};
 const _om=openModal;openModal=function(html){_om(html);if(S.mode==='team')linkify($('#modalBox'))};
 /* re-renders that only touch #tv */
 document.addEventListener('input',()=>{if(S.mode==='team')setTimeout(()=>linkify($('#tv')),0)});
+/* ============ four storefront departments: Janitorial · Auto Detailing · Carpet Cleaning · Power Washing. Items only. ============ */
+/* two new product families the old catalog did not have */
+Object.assign(VENDOR_CODE,{'Meguiar\'s':'MEG','P&S Detail Products':'PSD','3D Products':'3DP','Chemical Guys':'CHG','Simpson':'SIM','General Pump':'GNP'});
+VENDORS.length=0;VENDORS.push(...Object.keys(VENDOR_CODE));
+const NEW_CATS=[
+ {id:'auto',name:'Auto Detailing',n:72,code:'AD',shape:'jug',vendors:['Meguiar\'s','P&S Detail Products','3D Products','Chemical Guys','MarCo House Brand'],
+  sizes:[{s:'Gallon',m:1,cq:4},{s:'5 Gallon',m:4.1,cq:1},{s:'Quart',m:.4,cq:12},{s:'Each',m:1,cq:1}],
+  bases:[['Car Wash Soap',26],['Wheel & Tire Cleaner',24],['Tire Shine',22],['Interior Detailer',21],['All-Purpose Degreaser',19],['Glass Cleaner Ammonia-Free',16],['Spray Wax',28],['Ceramic Sealant',54],['Clay Bar Kit',39],['Microfiber Towel 16x16 12 pk',18],['Foam Cannon',49],['Carpet & Upholstery Shampoo',23],['Leather Cleaner & Conditioner',27],['Iron Remover',31],['Bug & Tar Remover',20],['Engine Bay Dressing',24],['Wash Mitt',9],['Detail Brush Set',14]],
+  vars:['','Concentrate','Pro','HD','Gloss','Matte','Cherry','Unscented','Kit']},
+ {id:'pressure',name:'Power Washing',n:64,code:'PW',shape:'jug',vendors:['Simpson','General Pump','Genlabs','MarCo House Brand','Chemtex'],
+  sizes:[{s:'Gallon',m:1,cq:4},{s:'5 Gallon',m:4.1,cq:1},{s:'Each',m:1,cq:1},{s:'55 Gallon Drum',m:38,cq:1}],
+  bases:[['Sodium Hypochlorite 12.5%',14],['House Wash Surfactant',29],['Concrete Degreaser',24],['Oxalic Acid Brightener',22],['Deck & Wood Cleaner',26],['Roof Wash Mix',31],['Rust Stain Remover',27],['Gutter Cleaner',23],['Surface Cleaner 20"',289],['Pressure Hose 3/8" 100 ft',129],['Spray Tip 5-pack',18],['Trigger Gun 4000 PSI',49],['Downstream Injector',34],['Telescoping Wand 24 ft',219],['Turbo Nozzle',59],['Pump Oil',11],['Ball Valve Kit',39],['Soft Wash Nozzle Set',44]],
+  vars:['','Concentrate','HD','Pro','Std','Kit','Brass','SS']}];
+(function genMore(){let seq=Math.max(...PRODUCTS.map(p=>p.id));
+ for(const c of NEW_CATS){CATS.push(c);CAT[c.id]=c;
+  for(let i=0;i<c.n;i++){const base=c.bases[i%c.bases.length],v=Math.floor(i/c.bases.length);const size=c.sizes[v%c.sizes.length];const variant=c.vars[Math.floor(v/c.sizes.length)%c.vars.length]||'';const vendor=c.vendors[(i*7+v)%c.vendors.length];const name=(base[0]+(variant?' '+variant:'')).trim();const each=round2(base[1]*size.m*(0.9+R()*0.25));const cq=size.cq;const casePrice=cq>1?round2(each*cq*0.93):null;const heavy=R();const vel=Math.round(heavy<.08?rnd(25,90):heavy<.35?rnd(6,25):heavy<.75?rnd(1,6):rnd(0,1));const lead=pick([3,5,7,7,10,14,21]);const rp=Math.max(1,Math.ceil(vel*lead/30*1.5)+1);const fill=rp+Math.max(2,Math.round(vel*1.2));let stock=chance(.13)?ri(1,rp):ri(rp+1,Math.round(fill*1.4)+1);if(chance(.05))stock=0;const cost=round2(each*.62);const sku=`${VENDOR_CODE[vendor]}-${c.code}${++seq}`;PRODUCTS.push({id:seq,sku,name,cat:c.id,vendor,size:size.s,each,casePrice,cq,stock,rp,fill,vel,lead,moq:pick([1,1,4,6,12]),cost,popular:i<3,amz:null});if(PROD)PROD[seq]=PRODUCTS[PRODUCTS.length-1]}}})();
+/* departments = what the storefront shows. Internal categories stay for the warehouse. */
+const DEPTS=[
+ {id:'d-jan',name:'Janitorial',cats:['janitorial','hardsurface','supplies']},
+ {id:'d-auto',name:'Auto Detailing',cats:['auto']},
+ {id:'d-carpet',name:'Carpet Cleaning',cats:['presprays','detergents','stain','pet','equipment','parts']},
+ {id:'d-pw',name:'Power Washing',cats:['pressure']}];
+const DEPT={};const DEPT_OF={};DEPTS.forEach(d=>{DEPT[d.id]=d;d.cats.forEach(c=>DEPT_OF[c]=d.id);CAT[d.id]={id:d.id,name:d.name,virtual:true,dept:true}});
+Object.assign(CATICON,{
+ 'd-jan':'<svg viewBox="0 0 34 34" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linejoin="round"><path d="M11 5h12v6H11zM13 11v18h8V11"/><path d="M6 29h22"/></svg>',
+ 'd-auto':'<svg viewBox="0 0 34 34" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linejoin="round"><path d="M5 20l3-8h18l3 8v7H5z"/><path d="M5 20h24M9 27v2M25 27v2"/><circle cx="10" cy="23" r="1.6"/><circle cx="24" cy="23" r="1.6"/></svg>',
+ 'd-carpet':'<svg viewBox="0 0 34 34" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linejoin="round"><path d="M6 22l14-14 8 8-14 14z"/><path d="M6 22v6h6M20 8l4-4"/></svg>',
+ 'd-pw':'<svg viewBox="0 0 34 34" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linejoin="round"><path d="M4 22l14-8 3 5-14 8z"/><path d="M18 14l6-3M24 8l3-2M26 13l4-1M22 5l1-3"/></svg>',
+ auto:'<svg viewBox="0 0 34 34" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linejoin="round"><path d="M5 20l3-8h18l3 8v7H5z"/><path d="M5 20h24"/></svg>',
+ pressure:'<svg viewBox="0 0 34 34" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linejoin="round"><path d="M4 22l14-8 3 5-14 8z"/><path d="M18 14l6-3M24 8l3-2"/></svg>'});
+const inDept=(p,id)=>DEPT_OF[p.cat]===id;
+const deptCount=id=>PRODUCTS.filter(p=>!p.off&&inDept(p,id)).length;
+/* shop filtering understands departments */
+const _filtD=filtered;filtered=function(){if(!(S.cat&&DEPT[S.cat]))return _filtD();const dept=S.cat;S.cat=null;let list;try{list=_filtD()}finally{S.cat=dept}return list.filter(p=>inDept(p,dept))};
+viewShop=function(){const list=filtered();const c=S.cat?CAT[S.cat]:null;const base=S.cat==='popular'?PRODUCTS.filter(p=>p.popular):S.cat&&DEPT[S.cat]?PRODUCTS.filter(p=>inDept(p,S.cat)):S.cat?PRODUCTS.filter(p=>p.cat===S.cat):PRODUCTS;const vendors=[...new Set(base.map(p=>p.vendor))].sort();
+  return `<div class="page-h"><div><span class="eyebrow"><a href="#" data-act="home" style="text-decoration:none">Shop</a> ${c?'/ '+c.name:''}</span><h1>${c?c.name:S.q?'Search results':'All items'}</h1></div><div class="search" style="min-width:min(320px,100%)">${ICON.search}<input id="shopQ" class="inp" placeholder="Search ${c?c.name.toLowerCase():'everything'}" value="${esc(S.q)}" data-inp="shopq"></div></div>
+   <div class="chips" style="margin-bottom:14px">${DEPTS.map(d=>`<button class="chip ${S.cat===d.id?'on':''}" data-act="cat" data-v="${d.id}">${d.name}</button>`).join('')}</div>
+   <div class="chips" style="margin-bottom:14px"><button class="chip ${S.vendor==='all'?'on':''}" data-act="vendor" data-v="all">All brands</button>${vendors.map(v=>`<button class="chip ${S.vendor===v?'on':''}" data-act="vendor" data-v="${esc(v)}">${esc(v)}</button>`).join('')}</div>
+   <div id="pgridWrap">${gridHTML(list)}</div>`};
+/* home: search, four departments, items. Nothing else. */
+viewHome=function(){const before11=new Date().getHours()<11;const items=PRODUCTS.filter(p=>!p.off).sort((a,b)=>(b.popular-a.popular)||(b.vel-a.vel));
+ return `<div class="search" style="margin-bottom:8px">${ICON.search}<input id="homeQ" class="inp" placeholder="Search by product, SKU or brand" data-inp="homeq"></div>
+ <p class="small muted" style="margin:0 0 16px">${before11?'Order by 11 AM and it\'s on today\'s truck.':'Orders placed now go out on the next route day.'} Free local delivery over $150 · counter pickup is free · UPS anywhere.</p>
+ <div class="cats">${DEPTS.map(d=>`<button class="cat" data-act="cat" data-v="${d.id}">${CATICON[d.id]}<b>${d.name}</b><span>${deptCount(d.id)} items</span></button>`).join('')}</div>
+ <div class="page-h" style="margin-top:22px"><h2>All items</h2><button class="btn sm" data-act="cat" data-v="">See all</button></div><div class="pgrid">${items.slice(0,24).map(prodCard).join('')}</div>`};
+ACT.cat=d=>{leaveCheckout();S.cat=d.v||null;S.q='';S.vendor='all';S.limit=48;go('shop')};
+/* storefront nav: Shop · Track Order · My Account */
+for(const id of ['quick','rentals']){const i=STORE_PAGES.findIndex(x=>x[0]===id);if(i>-1)STORE_PAGES.splice(i,1)}
+/* team side: anything listing categories should also show the two new ones (they are in CATS already); department name for reports */
+const deptName=cat=>(DEPT[DEPT_OF[cat]]||{}).name||'';
+PID_SEQ=Math.max(...PRODUCTS.map(p=>p.id));
 /* ---- cloud mode: real logins + shared storage on Supabase. Off (demo PIN mode) until CLOUD.url is filled at deploy time. ---- */
 const CLOUD={url:'https://zsuzfrfsglykqekorldk.supabase.co',key:'sb_publishable_LZIpquz5dq6WP3hagT3UKg_6Du17Do4',fn:'admin-users'};
 if(/^__/.test(CLOUD.url)){CLOUD.url='';CLOUD.key=''}
