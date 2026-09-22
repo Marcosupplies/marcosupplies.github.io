@@ -2836,8 +2836,8 @@ ACT['web-accept']=async d=>{const o=(S.webOrders||[]).find(x=>x.id===d.id);if(!o
  try{const {error}=await SB.from('preorders').update({status:'accepted',accepted_order:ord.id,handled_by:S.me?.email||S.auth,handled_at:new Date().toISOString()}).eq('id',o.id);if(error)throw error}catch(e){toast(e.message)}
  o.status='accepted';o.accepted_order=ord.id;toast(`Order #${ord.id} created for ${custName(c)}`);schedulePersist();render()};
 ACT['web-decline']=async d=>{const o=(S.webOrders||[]).find(x=>x.id===d.id);if(!o)return;try{const {error}=await SB.from('preorders').update({status:'declined',handled_by:S.me?.email||S.auth,handled_at:new Date().toISOString()}).eq('id',o.id);if(error)throw error}catch(e){toast(e.message)}o.status='declined';render()};
-VIEWS.rosa.tabs.unshift(['web','Web pre-orders',webNew]);VIEWS.rosa.r.web=vWebOrders;VIEWS.anita.tabs.splice(4,0,['web','Web pre-orders',webNew]);VIEWS.anita.r.web=vWebOrders;
-VIEWS.tony.tabs.unshift(['web','Web orders',webNew]);VIEWS.tony.r.web=vWebOrders;BASICS.splice(1,0,['web','Web orders']);
+VIEWS.rosa.tabs.splice(1,0,['web','Web pre-orders',webNew]);VIEWS.rosa.r.web=vWebOrders;VIEWS.anita.tabs.splice(4,0,['web','Web pre-orders',webNew]);VIEWS.anita.r.web=vWebOrders;
+VIEWS.tony.tabs.splice(1,0,['web','Web orders',webNew]);VIEWS.tony.r.web=vWebOrders;BASICS.splice(1,0,['web','Web orders']);
 if(cloudOn())setInterval(()=>{if(S.auth&&S.mode==='team')loadWebOrders()},60000);
 /* ---- contact page ---- */
 STORE_PAGES.push(['contact','Contact']);
