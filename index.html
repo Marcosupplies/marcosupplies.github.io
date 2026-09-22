@@ -2679,7 +2679,7 @@ const BASIC_SRC={orders:'anita',shipping:'anita',levels:'inventory',returns:'ani
  const order=BASICS.map(b=>b[0]);T.tabs.sort((a,b)=>{const ia=order.indexOf(a[0]),ib=order.indexOf(b[0]);return (ia<0?99:ia)-(ib<0?99:ib)})})();
 const isBasicsRole=()=>S.role==='tony';
 const _rtB=renderTeam;renderTeam=function(){_rtB();if(!isBasicsRole()||!S.auth)return;
- const main=$('#main');main.querySelectorAll('.rail,.roles-mobile').forEach(e=>e.remove());
+ const main=$('#main');
  const bar=main.querySelector('.tabs');if(!bar)return;const cur=S.tab.tony;const names=Object.fromEntries(BASICS);
  bar.querySelectorAll('button[data-act=tab]').forEach(b=>{const id=b.dataset.v;if(names[id]){b.firstChild.textContent=names[id]}else if(id!==cur)b.remove();else b.classList.add('more-on')});
  const m=document.createElement('button');m.dataset.act='more-menu';m.innerHTML='More ▾';bar.appendChild(m)};
