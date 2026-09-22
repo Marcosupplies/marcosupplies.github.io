@@ -2672,6 +2672,31 @@ for(const id of ['quick','rentals']){const i=STORE_PAGES.findIndex(x=>x[0]===id)
 /* team side: anything listing categories should also show the two new ones (they are in CATS already); department name for reports */
 const deptName=cat=>(DEPT[DEPT_OF[cat]]||{}).name||'';
 PID_SEQ=Math.max(...PRODUCTS.map(p=>p.id));
+/* ============ Tony sees the basics. Everything else lives under "More". ============ */
+const BASICS=[['board','Today'],['orders','Orders'],['shipping','Shipping'],['levels','Inventory'],['fin','Money'],['returns','Returns'],['quotes','Quotes']];
+const BASIC_SRC={orders:'anita',shipping:'anita',levels:'inventory',returns:'anita',quotes:'rosa'};
+(function(){const T=VIEWS.tony;const have=new Set(T.tabs.map(t=>t[0]));for(const [id] of BASICS){if(have.has(id))continue;const src=VIEWS[BASIC_SRC[id]];const t=src.tabs.find(x=>x[0]===id);if(!t)continue;T.tabs.push([t[0],t[1],t[2]]);T.r[id]=src.r[id]}
+ const order=BASICS.map(b=>b[0]);T.tabs.sort((a,b)=>{const ia=order.indexOf(a[0]),ib=order.indexOf(b[0]);return (ia<0?99:ia)-(ib<0?99:ib)})})();
+const isBasicsRole=()=>S.role==='tony';
+const _rtB=renderTeam;renderTeam=function(){_rtB();if(!isBasicsRole()||!S.auth)return;
+ const main=$('#main');main.querySelectorAll('.rail,.roles-mobile').forEach(e=>e.remove());
+ const bar=main.querySelector('.tabs');if(!bar)return;const cur=S.tab.tony;const names=Object.fromEntries(BASICS);
+ bar.querySelectorAll('button[data-act=tab]').forEach(b=>{const id=b.dataset.v;if(names[id]){b.firstChild.textContent=names[id]}else if(id!==cur)b.remove();else b.classList.add('more-on')});
+ const m=document.createElement('button');m.dataset.act='more-menu';m.innerHTML='More ▾';bar.appendChild(m)};
+function moreMenu(){const own=VIEWS.tony.tabs.filter(t=>!BASICS.some(b=>b[0]===t[0])&&(!t[3]||t[3]()));const people=ROLES.filter(r=>r.id!=='tony'&&canView(r.id));
+ const link=(role,id,label)=>`<button class="btn sm" data-act="role" data-v="${role}" data-tab="${id}">${label}</button>`;
+ return `<div class="more-grp"><h3>Also for Tony</h3><div class="row wrap">${own.map(t=>link('tony',t[0],t[1])).join('')}</div></div>
+ ${people.map(r=>`<div class="more-grp"><h3>${esc(r.sys?'Inventory':r.name.split(' ')[0])} <span class="muted small">· ${esc(r.title)}</span></h3><div class="row wrap">${roleTabs(VIEWS[r.id]).filter(t=>!BASICS.some(b=>b[0]===t[0]&&BASIC_SRC[t[0]]===r.id)).map(t=>link(r.id,t[0],t[1])).join('')}</div></div>`).join('')}
+ <div class="more-grp"><h3>Account</h3><div class="row wrap"><button class="btn sm" data-act="pin-change">Change my password</button><button class="btn sm" data-act="signin">Switch person</button><button class="btn sm" data-act="signout">Sign out</button></div></div>`}
+ACT['more-menu']=()=>openModal(modalFrame('More',moreMenu()));
+const _roleB=ACT.role;ACT.role=d=>{closeModal();_roleB(d)};
+document.head.insertAdjacentHTML('beforeend','<style>.more-grp{margin-bottom:16px}.more-grp h3{font-size:13px;margin:0 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}.more-grp .row.wrap{gap:6px}.tabs button.more-on{color:var(--text)}</style>');
+/* guards: these handlers assumed a form or a filter was on screen */
+const _odA=ACT['od-add'];ACT['od-add']=d=>{if(!(S.od&&S.od.pending)&&!$('#odItem'))return;_odA(d)};
+const _odS=ACT['od-send'];ACT['od-send']=d=>{if(!S.od||!S.od.cust||!(S.od.items||[]).length){toast('Add a customer and at least one item first');return}_odS(d)};
+const _csG=ACT['camp-send'];ACT['camp-send']=d=>{const draft=d&&d.id?CAMPAIGNS.find(x=>x.id===d.id&&x.status==='draft'):null;if((draft&&!draft.filt)||(!draft&&!S.camp)){toast('Set up the campaign first');return}_csG(d)};
+const _ieG=ACT['invoice-email'];ACT['invoice-email']=d=>{const o=ORDERS.find(x=>x.id==d.oid);if(!o||!CUST[o.cid]){toast('Order not found');return}if(o.inv&&!INVOICES.find(i=>i.id===o.inv))o.inv=null;_ieG(d)};
+document.head.insertAdjacentHTML('beforeend','<style>.more-grp .row{margin:0;min-height:0}.more-grp{margin-bottom:14px}</style>');
 /* ---- cloud mode: real logins + shared storage on Supabase. Off (demo PIN mode) until CLOUD.url is filled at deploy time. ---- */
 const CLOUD={url:'https://zsuzfrfsglykqekorldk.supabase.co',key:'sb_publishable_LZIpquz5dq6WP3hagT3UKg_6Du17Do4',fn:'admin-users'};
 if(/^__/.test(CLOUD.url)){CLOUD.url='';CLOUD.key=''}
