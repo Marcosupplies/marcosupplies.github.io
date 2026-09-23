@@ -2998,6 +2998,8 @@ const _resetC=ACT.reset;ACT.reset=()=>{_resetC();const b=$('#modalBox .bx-b');if
 const _vlevC=vInvLevels;vInvLevels=function(){let h=_vlevC();if(!window.CLEAN_START)return h;return h.replace(/<h1>Stock levels/,'<h1>Stock levels').replace('<p class="muted small">','<p class="note" style="margin-bottom:10px">Nothing has been counted yet. Run a count route, add stock as it comes in, or import counts from a spreadsheet. Until then the store sells everything as a pre-order.</p><p class="muted small">')};VIEWS.inventory.r.levels=vInvLevels;if(VIEWS.tony.r.levels)VIEWS.tony.r.levels=vInvLevels;if(VIEWS.warehouse&&VIEWS.warehouse.r.levels)VIEWS.warehouse.r.levels=vInvLevels;
 /* counting or receiving an item makes it counted */
 const _asC=typeof addStock==='function'?addStock:null;if(_asC){addStock=function(pid,qty,who,ref){const p=PROD[pid];if(p)p.uncounted=false;return _asC(pid,qty,who,ref)}}
+/* Today page on a clean site: no crew narrative, no Amazon card until Amazon is connected */
+const _rtClean=renderTeam;renderTeam=function(){_rtClean();if(!window.CLEAN_START||S.tab[S.role]!=='board')return;const tv=$('#tv');if(!tv)return;tv.querySelectorAll('h2').forEach(h=>{if(/Crew, right now/.test(h.textContent)){const box=h.parentElement;if(box)box.remove()}});tv.querySelectorAll('.card,.kpi,.biz').forEach(c=>{const t=c.querySelector('h3,b,.t');if(t&&/^Amazon$/.test(t.textContent.trim()))c.remove()});tv.querySelectorAll('p').forEach(p=>{if(/Rosa has 0 new orders/.test(p.textContent))p.remove()})};
 /* ============ boot ============ */
 setMode('store');
 bootPersist();
