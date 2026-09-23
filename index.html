@@ -1002,7 +1002,7 @@ function placeJob(j,trucks){trucks=trucks||(j.svc==='hauling'?HAULERS:TRUCKS);co
   j.truck=best.t.id;j.start=best.start;j.drive=best.drive;return j}
 /* ---- sign-in gate (demo PIN) ---- */
 const DEMO_PIN='1234';
-const canView=role=>{if(!S.auth)return false;if(S.auth==='tony')return true;if(role===S.auth)return true;if(role==='inventory')return ['rosa','marcus','anita'].includes(S.auth);return false};
+let canView=role=>{if(!S.auth)return false;if(S.auth==='tony')return true;if(role===S.auth)return true;if(role==='inventory')return ['rosa','marcus','anita'].includes(S.auth);return false};
 const authedRoles=()=>ROLES.filter(r=>canView(r.id));
 function openSignIn(role){S.pinFor=role||S.pinFor||S.auth||'tony';S.pin='';S.pinErr=false;renderSignIn()}
 function renderSignIn(){const r=ROLES.find(x=>x.id===S.pinFor)||ROLES[0];openModal(modalFrame('Who\'s clocking in?',`<div class="people">${ROLES.filter(x=>!x.sys).map(x=>`<button class="${x.id===S.pinFor?'on':''}" data-act="pin-who" data-v="${x.id}"><span class="avatar" style="background:${x.col}">${initials(x.name)}</span><b>${x.name}</b><span>${x.title}</span></button>`).join('')}</div>
@@ -1690,7 +1690,7 @@ function vRosaDesk(){const now=new Date();const mins=11*60-(now.getHours()*60+no
 INP['od-cust']=el=>{S.od=S.od||{items:[]};S.od.cust=el.value};
 INP['od-item']=el=>{S.od=S.od||{items:[]};S.od.pending=el.value};
 INP['od-ful']=el=>{S.od=S.od||{items:[]};S.od.ful=el.value};
-ACT['od-add']=()=>{S.od=S.od||{items:[]};const v=(S.od.pending||$('#odItem').value||'').trim();const sku=v.split(' — ')[0].trim().toUpperCase();let p=PRODUCTS.find(x=>x.sku===sku)||PRODUCTS.find(x=>x.name.toLowerCase().includes(v.toLowerCase()));if(!p){toast('No product matches that');return}const ex=S.od.items.find(i=>i.pid===p.id);if(ex)ex.q++;else S.od.items.push({pid:p.id,q:1,unit:p.casePrice?'case':'each'});S.od.pending='';render();$('#odItem').focus()};
+ACT['od-add']=()=>{S.od=S.od||{items:[]};const v=(S.od.pending||$('#odItem').value||'').trim();const sku=v.split(' — ')[0].trim().toUpperCase();let p=PRODUCTS.find(x=>x.sku===sku)||PRODUCTS.find(x=>x.name.toLowerCase().includes(v.toLowerCase()));if(!p){toast('No product matches that');return}const ex=S.od.items.find(i=>i.pid===p.id);if(ex)ex.q++;else S.od.items.push({pid:p.id,q:1,unit:p.casePrice?'case':'each'});S.od.pending='';render();const _f=$('#odItem');if(_f)_f.focus()};
 ACT['od-qty']=d=>{const i=S.od.items[+d.i];i.q+=+d.n;if(i.q<=0)S.od.items.splice(+d.i,1);render()};
 ACT['od-send']=()=>{const c=CUSTOMERS.find(x=>x.biz===S.od.cust)||CUSTOMERS.find(x=>x.biz&&x.biz.toLowerCase().startsWith(S.od.cust.toLowerCase()))||ME;const ful=S.od.ful||'truck';const o=addOrder({cid:c.id,kind:'supply',d:TODAY,ch:'phone',items:S.od.items,status:'new',ful,paid:false,open:true,backorder:0,placedBy:'Rosa'});OPEN.push(o);const now=new Date();const before=now.getHours()*60+now.getMinutes()<11*60;
   sendMsg({cid:c.id,via:'sms',body:`MarCo: order #${o.id} is in — ${plural(o.items.length,'line')}, ${money2(o.total)}. ${ful==='truck'?(before?"It's on today's truck; Danny texts when he's 20 minutes out.":"It goes out on tomorrow's truck."):ful==='willcall'?"We'll text you when it's on the will-call shelf.":'Ships UPS Ground — tracking number to follow.'} Track it: marco.supply/t/${o.id}`,kind:'order',ref:'SO-'+o.id});
@@ -2777,7 +2777,7 @@ if(cloudOn()&&/type=recovery/.test(location.hash)){setTimeout(()=>{ACT['pin-chan
 S.users=S.users||null;
 async function adminCall(body){await cloudClient();const {data:{session}}=await SB.auth.getSession();const r=await fetch(`${CLOUD.url}/functions/v1/${CLOUD.fn}`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+(session?session.access_token:''),apikey:CLOUD.key},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('Request failed ('+r.status+')'));return j}
 async function loadUsers(){try{const j=await adminCall({op:'list'});S.users=j.users||[];render()}catch(e){toast(e.message)}}
-const ROLE_OPTS=[['pending','No role yet (blocked)'],['tony','Owner — sees everything'],['rosa','Inside sales / counter'],['marcus','Warehouse'],['danny','Driver'],['karen','Outside sales'],['anita','Office / accounting'],[DEV_ROLE,'Developer']];
+let ROLE_OPTS=[['pending','No role yet (blocked)'],['tony','CEO — sees everything'],['coach','CFO — money and financials'],['warehouse','Warehouse & delivery'],['marketing','Accounts & marketing'],['customer','Customer (storefront only)'],[DEV_ROLE,'Developer']];
 function vDev(){if(!S.dev)return '<div class="card"><p>Developer only.</p></div>';if(S.users===null){S.users=[];setTimeout(loadUsers,0)}const u=S.users||[];
  return `<div class="page-h"><h1>Developer</h1><p class="muted small">Who can sign in, what each person sees, and the data behind the site.</p></div>
  <div class="card"><div class="card-h"><h3>People who can sign in</h3><button class="btn sm" data-act="dev-refresh">Refresh</button></div>
@@ -2931,6 +2931,37 @@ ACT['csv-import-do']=async()=>{const f=$('#csvFile')?.files?.[0];let text=$('#cs
 const _vlevX=vInvLevels;vInvLevels=function(){return _vlevX().replace('data-act="csv-products">Export CSV</button>','data-act="csv-products">Export CSV</button> <button class="btn sm" data-act="csv-import">Import CSV</button>')};VIEWS.inventory.r.levels=vInvLevels;if(VIEWS.tony.r.levels)VIEWS.tony.r.levels=vInvLevels;
 /* ---- team sign-in: a customer account is not a team login ---- */
 const _csiG=ACT['cloud-signin-do'];ACT['cloud-signin-do']=async()=>{await _csiG();if(S.customer&&!S.auth){const e=$('#siErr');if(e)e.textContent='That is a customer account. Use My Account on the storefront.'}};
+/* ============ the real team: Developer · CEO · CFO · Warehouse & delivery · Accounts & marketing. The demo cast folds into these. ============ */
+const ROLE_ALIAS={rosa:'tony',anita:'tony',marcus:'warehouse',danny:'warehouse',karen:'marketing'};
+const realRole=r=>ROLE_ALIAS[r]||r;
+ROLES.length=0;ROLES.push(
+ {id:'tony',name:'Tony M.',title:'CEO',col:'#003C84'},
+ {id:'coach',name:'Coach',title:'CFO · money',col:'#5A3FA0'},
+ {id:'warehouse',name:'Warehouse',title:'Warehouse & delivery',col:'#2E5E3A'},
+ {id:'marketing',name:'Marketing',title:'Accounts & marketing',col:'#8B2E5B'},
+ {id:'inventory',name:'Inventory',title:'Shared workspace',col:'#3C3F44',sys:true});
+/* build each person's screens from the old ones */
+function mergeViews(ids,extraTabs){const tabs=[],r={},seen=new Set();for(const id of ids){const v=VIEWS[id];if(!v)continue;for(const t of v.tabs){if(seen.has(t[0]))continue;seen.add(t[0]);tabs.push(t);r[t[0]]=v.r[t[0]]}}for(const [src,tid,label] of extraTabs||[]){if(seen.has(tid))continue;const v=VIEWS[src];const t=v&&v.tabs.find(x=>x[0]===tid);if(!t||!v.r[tid])continue;seen.add(tid);tabs.push(label?[tid,label,t[2],t[3]]:t);r[tid]=v.r[tid]}return {tabs,r}}
+VIEWS.coach=mergeViews([],[['tony','board','Today'],['tony','fin','Money'],['tony','tax','Sales tax'],['anita','payments','Payments'],['anita','collections','Collections'],['anita','invoices','Invoices & statements'],['inventory','valuation','Inventory value'],['inventory','dead','Dead stock'],['tony','activity','Activity'],['tony','web','Web orders']]);
+VIEWS.warehouse=mergeViews(['marcus','danny'],[['inventory','adjust','Adjustments'],['inventory','po','PO queue'],['inventory','vendors','Vendors'],['anita','shipping','Shipments'],['anita','returns','Returns']]);
+VIEWS.marketing=mergeViews(['karen'],[['rosa','lookup','Customer lookup'],['rosa','quotes','Quotes'],['rosa','messages','Messages'],['anita','followups','Follow-ups'],['anita','outbox','Outbox'],['tony','reviews','Reviews'],['tony','discounts','Discount codes'],['tony','attr','Digital attribution'],['tony','amazon','Amazon channel']]);
+/* Tony keeps the basics up front; everything Rosa and Anita had sits under More */
+(function(){const have=new Set(VIEWS.tony.tabs.map(t=>t[0]));for(const id of ['rosa','anita']){for(const t of VIEWS[id].tabs){if(have.has(t[0]))continue;have.add(t[0]);VIEWS.tony.tabs.push(t);VIEWS.tony.r[t[0]]=VIEWS[id].r[t[0]]}}})();
+/* access: CEO and Developer see everything; others see their own screens (+ the shared Inventory workspace for warehouse and CFO) */
+canView=role=>{if(!S.auth)return false;const me=realRole(S.auth);if(me==='tony')return true;const r=realRole(role);if(r===me)return true;if(role==='inventory')return ['warehouse','coach'].includes(me);return false};
+/* old ids still work everywhere they are referenced */
+const _teamR=team;team=function(role,tab){const r=realRole(role);if(r!==role&&tab&&!(VIEWS[r]&&VIEWS[r].r[tab])){/* tab not carried over: open the person's first screen */tab=undefined}return _teamR(r,tab)};
+const _apR=applyProfile;applyProfile=p=>{if(p&&ROLE_ALIAS[p.role])p=Object.assign({},p,{role:ROLE_ALIAS[p.role]});return _apR(p)};
+if(ROLE_ALIAS[S.role])S.role=ROLE_ALIAS[S.role];if(ROLE_ALIAS[S.auth])S.auth=ROLE_ALIAS[S.auth];
+/* More menu: group the screens by the real people */
+moreMenu=function(){const own=VIEWS.tony.tabs.filter(t=>!BASICS.some(b=>b[0]===t[0])&&(!t[3]||t[3]()));const people=ROLES.filter(r=>r.id!=='tony'&&canView(r.id));const link=(role,id,label)=>`<button class="btn sm" data-act="role" data-v="${role}" data-tab="${id}">${label}</button>`;
+ return `<div class="more-grp"><h3>More for Tony</h3><div class="row wrap">${own.map(t=>link('tony',t[0],t[1])).join('')}</div></div>${people.map(r=>`<div class="more-grp"><h3>${esc(r.sys?'Inventory':r.name)} <span class="muted small">· ${esc(r.title)}</span></h3><div class="row wrap">${roleTabs(VIEWS[r.id]).map(t=>link(r.id,t[0],t[1])).join('')}</div></div>`).join('')}<div class="more-grp"><h3>Account</h3><div class="row wrap">${cloudOn()?'<button class="btn sm" data-act="push-on">Turn on phone alerts</button>':''}<button class="btn sm" data-act="pin-change">Change my password</button><button class="btn sm" data-act="signin">Switch person</button><button class="btn sm" data-act="signout">Sign out</button></div></div>`};
+/* web-order inbox for the people who need it */
+VIEWS.warehouse.tabs.splice(1,0,['web','Web orders',webNew]);VIEWS.warehouse.r.web=vWebOrders;
+/* anything that still says an old name gets the real person before it draws */
+const _renderRoles=render;render=function(){for(const o in ROLE_ALIAS){if(S.tab[o]){S.tab[ROLE_ALIAS[o]]=S.tab[o];delete S.tab[o]}}if(S.role&&ROLE_ALIAS[S.role])S.role=ROLE_ALIAS[S.role];if(S.auth&&ROLE_ALIAS[S.auth])S.auth=ROLE_ALIAS[S.auth];if(S.pinFor&&ROLE_ALIAS[S.pinFor])S.pinFor=ROLE_ALIAS[S.pinFor];return _renderRoles()};
+const _osiRoles=openSignIn;openSignIn=function(role){return _osiRoles(realRole(role))};
+const _pwRoles=ACT['pin-who'];ACT['pin-who']=d=>_pwRoles({v:realRole(d.v)});
 /* ============ boot ============ */
 setMode('store');
 bootPersist();
